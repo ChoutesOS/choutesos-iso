@@ -1,0 +1,17 @@
+# Fonts
+adwaita-fonts
+fontconfig
+gsfonts
+inter-font
+lib32-fontconfig
+libfontenc
+libxfont2
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+python-fonttools
+sdl3_ttf
+ttf-dejavu
+ttf-jetbrains-mono-nerd
+ttf-liberation
+xorg-fonts-encodings

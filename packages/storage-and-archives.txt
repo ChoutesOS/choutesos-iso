@@ -1,0 +1,30 @@
+# Storage, phones (MTP) and USB
+ntfs-3g
+gvfs
+gvfs-mtp
+android-tools
+android-udev
+libmtp
+mtpfs
+usbutils
+udisks2
+fuse3
+
+# Archive tools
+7zip
+unzip
+zip
+unrar
+tar
+gzip
+bzip2
+xz
+zstd
+lz4
+lzip
+lzop
+cpio
+cabextract
+unarchiver
+unp
+libarchive

@@ -1,0 +1,15 @@
+# CPU microcode and firmware
+amd-ucode
+intel-ucode
+linux-firmware
+
+# Graphics: AMD and Intel (NVIDIA is intentionally not included)
+mesa
+lib32-mesa
+vulkan-radeon
+lib32-vulkan-radeon
+vulkan-intel
+lib32-vulkan-intel
+intel-media-driver
+vulkan-tools
+mesa-utils

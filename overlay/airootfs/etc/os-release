@@ -1,0 +1,14 @@
+NAME="ChoutesOS"
+PRETTY_NAME="ChoutesOS"
+ID=choutesos
+ID_LIKE=arch
+BUILD_ID=rolling
+VERSION_ID=__VERSION__
+VERSION="__VERSION__ (Harimau)"
+VERSION_CODENAME=harimau
+ANSI_COLOR="38;2;150;96;248"
+HOME_URL="https://github.com/ChoutesOS"
+DOCUMENTATION_URL="https://github.com/ChoutesOS/choutesos"
+SUPPORT_URL="https://github.com/ChoutesOS/choutesos/issues"
+BUG_REPORT_URL="https://github.com/ChoutesOS/choutesos/issues"
+LOGO=choutesos

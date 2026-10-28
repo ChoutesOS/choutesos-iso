@@ -1,0 +1,6 @@
+# Gaming
+steam
+gamemode
+lib32-gamemode
+mangohud
+lib32-mangohud
