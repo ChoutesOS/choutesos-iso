@@ -3,6 +3,8 @@
 work/
 out/
 profile/
+repo/
+aur-build/
 __pycache__/
 *.pyc
 .venv/

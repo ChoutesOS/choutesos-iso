@@ -1,0 +1,46 @@
+# ChoutesOS GRUB theme
+desktop-image: "background.jpg"
+desktop-color: "#0B0A12"
+title-text: ""
+terminal-font: "Unifont Regular 16"
+
++ image {
+    left = 50%-210
+    top = 7%
+    file = "wordmark.png"
+}
+
++ boot_menu {
+    left = 50%-280
+    top = 32%
+    width = 560
+    height = 40%
+    item_font = "Unifont Regular 16"
+    item_color = "#C9C5DD"
+    selected_item_color = "#FFFFFF"
+    item_height = 44
+    item_padding = 14
+    item_spacing = 10
+    selected_item_pixmap_style = "select_*.png"
+}
+
++ label {
+    id = "__timeout__"
+    left = 0
+    top = 90%
+    width = 100%
+    align = "center"
+    color = "#B9B5CE"
+    font = "Unifont Regular 16"
+    text = "Booting in %d seconds"
+}
+
++ label {
+    left = 0
+    top = 94%
+    width = 100%
+    align = "center"
+    color = "#8D89A3"
+    font = "Unifont Regular 16"
+    text = "Use the arrow keys to choose, Enter to boot"
+}

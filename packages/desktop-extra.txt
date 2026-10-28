@@ -1,0 +1,6 @@
+# Desktop pieces the Hyprland shell does not list itself
+xorg-xwayland
+qt6-wayland
+polkit
+sddm
+plymouth

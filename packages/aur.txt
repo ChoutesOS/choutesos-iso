@@ -1,0 +1,8 @@
+# Built into the "choutesos" repository by scripts/build-aur-repo.sh
+yay-bin
+helium-browser-bin
+bibata-cursor-theme-bin
+whitesur-icon-theme
+mpvpaper
+# The XanMod kernel (stable branch). Compiles from source: expect 30 to 60 minutes the first time.
+linux-xanmod

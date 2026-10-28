@@ -1,0 +1,15 @@
+# Needed by the ChoutesOS installer
+python
+pyside6
+qt6-declarative
+qt6-wayland
+rsync
+arch-install-scripts
+gptfdisk
+parted
+dosfstools
+btrfs-progs
+e2fsprogs
+grub
+efibootmgr
+os-prober

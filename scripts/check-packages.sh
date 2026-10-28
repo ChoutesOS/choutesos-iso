@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verifies that every package listed in packages/*.txt exists in the enabled pacman repositories.
+# Verifies that every package listed in packages/*.txt (except aur.txt) exists in the enabled pacman repositories.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,7 +9,7 @@ while read -r pkg; do
     if ! pacman -Si "$pkg" >/dev/null 2>&1; then
         missing+=("$pkg")
     fi
-done < <(cat "$REPO_DIR"/packages/*.txt | sed 's/#.*//' | awk 'NF {print $1}' | sort -u)
+done < <(find "$REPO_DIR/packages" -name '*.txt' ! -name 'aur.txt' -exec cat {} + | sed 's/#.*//' | awk 'NF {print $1}' | sort -u)
 
 if ((${#missing[@]})); then
     echo "These packages were not found in your enabled repositories:" >&2

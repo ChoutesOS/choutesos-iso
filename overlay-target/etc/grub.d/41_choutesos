@@ -1,0 +1,29 @@
+#!/bin/sh
+# ChoutesOS: extra boot menu entries (restart, shut down, memory test).
+. "$pkgdatadir/grub-mkconfig_lib"
+
+cat <<'ENTRIES'
+menuentry "Restart" --class restart {
+    reboot
+}
+menuentry "Shut down" --class shutdown {
+    halt
+}
+ENTRIES
+
+if [ -d /sys/firmware/efi ] && [ -f /boot/memtest86+/memtest.efi ]; then
+    path="$(make_system_path_relative_to_its_root /boot/memtest86+/memtest.efi)"
+    cat <<ENTRIES
+menuentry "Memory test (Memtest86+)" --class memtest {
+    insmod chain
+    chainloader ${path}
+}
+ENTRIES
+elif [ -f /boot/memtest86+/memtest.bin ]; then
+    path="$(make_system_path_relative_to_its_root /boot/memtest86+/memtest.bin)"
+    cat <<ENTRIES
+menuentry "Memory test (Memtest86+)" --class memtest {
+    linux16 ${path}
+}
+ENTRIES
+fi
