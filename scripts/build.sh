@@ -3,7 +3,7 @@
 #
 #   ./scripts/build.sh                 raise the version number, then build
 #   ./scripts/build.sh --keep-version  build without raising the version number
-#   LIVE_GRUB=1 ./scripts/build.sh     use GRUB (with the ChoutesOS theme) for UEFI boot of the ISO
+#   LIVE_GRUB=0 ./scripts/build.sh     use the plain boot menu (the themed GRUB menu is the default)
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,7 +18,12 @@ echo "Building ChoutesOS $(<"$REPO_DIR/VERSION")"
 
 sudo rm -rf "$REPO_DIR/work"
 mkdir -p "$REPO_DIR/out"
-sudo mkarchiso -v -w "$REPO_DIR/work" -o "$REPO_DIR/out" "$REPO_DIR/profile"
+if ! sudo mkarchiso -v -w "$REPO_DIR/work" -o "$REPO_DIR/out" "$REPO_DIR/profile"; then
+    echo >&2
+    echo "The build failed. If the error mentions GRUB, build with the plain boot menu instead:" >&2
+    echo "    LIVE_GRUB=0 ./scripts/build.sh --keep-version" >&2
+    exit 1
+fi
 
 # The live initramfs must contain the archiso hooks, or the ISO cannot find its own files.
 echo

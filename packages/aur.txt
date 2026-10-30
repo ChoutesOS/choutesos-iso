@@ -4,5 +4,6 @@ helium-browser-bin
 bibata-cursor-theme-bin
 whitesur-icon-theme
 mpvpaper
-# The XanMod kernel (stable branch). Compiles from source: expect 30 to 60 minutes the first time.
-linux-xanmod
+# The XanMod kernel (stable branch, x86-64-v2), prebuilt by XanMod: no compiling, only repackaging.
+# Building this package also produces linux-xanmod-linux-headers-bin-x64v2.
+linux-xanmod-linux-bin-x64v2

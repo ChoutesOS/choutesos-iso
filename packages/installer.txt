@@ -1,8 +1,9 @@
-# Needed by the ChoutesOS installer
+# Needed by the ChoutesOS installer and first-boot setup
 python
 pyside6
 qt6-declarative
 qt6-wayland
+cage
 rsync
 arch-install-scripts
 gptfdisk
@@ -13,3 +14,4 @@ e2fsprogs
 grub
 efibootmgr
 os-prober
+networkmanager

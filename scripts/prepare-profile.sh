@@ -12,6 +12,7 @@ AIROOT="$PROFILE/airootfs"
 SKEL="$AIROOT/etc/skel"
 TARGET_OVERLAY="$AIROOT/usr/share/choutesos-installer/target-overlay"
 DB="$REPO_DIR/repo/choutesos.db.tar.zst"
+KERNEL_PACKAGE="linux-xanmod-linux-bin-x64v2"
 
 [[ -d "$SRC" ]] || { echo "archiso releng profile not found at $SRC (install the archiso package)." >&2; exit 1; }
 [[ -d "$DESKTOP_REPO/home" ]] || { echo "Desktop repo not found at $DESKTOP_REPO" >&2; exit 1; }
@@ -27,7 +28,7 @@ LABEL="${LABEL//./}"
 sed -i \
     -e "s|^iso_name=.*|iso_name=\"choutesos\"|" \
     -e "s|^iso_label=.*|iso_label=\"${LABEL}\"|" \
-    -e "s|^iso_publisher=.*|iso_publisher=\"ChoutesOS <https://github.com/ChoutesOS>\"|" \
+    -e "s|^iso_publisher=.*|iso_publisher=\"ChoutesOS <https://choutes.com>\"|" \
     -e "s|^iso_application=.*|iso_application=\"ChoutesOS Live/Installer\"|" \
     -e "s|^iso_version=.*|iso_version=\"${VERSION}\"|" \
     "$PROFILE/profiledef.sh"
@@ -61,11 +62,18 @@ else
     echo "note: no local repository (run scripts/build-aur-repo.sh); building without Helium, yay, themes and XanMod." >&2
 fi
 
+# The kernel's real name (its pkgbase) is read from the package itself, so boot entries always match.
 KERNEL=linux
-if printf '%s\n' "${aur_pkgs[@]+"${aur_pkgs[@]}"}" | grep -qx 'linux-xanmod'; then
-    KERNEL=linux-xanmod
-else
-    echo "warning: linux-xanmod is not in the local repository; the ISO will use the stock Arch kernel." >&2
+if printf '%s\n' "${aur_pkgs[@]+"${aur_pkgs[@]}"}" | grep -qx "$KERNEL_PACKAGE"; then
+    kernel_file="$(ls -v "$REPO_DIR"/repo/"$KERNEL_PACKAGE"-[0-9]*.pkg.tar.zst 2>/dev/null | tail -n1 || true)"
+    if [[ -n "$kernel_file" ]]; then
+        member="$(bsdtar -tf "$kernel_file" | grep -m1 '^usr/lib/modules/.*/pkgbase$' || true)"
+        [[ -n "$member" ]] && KERNEL="$(bsdtar -xOf "$kernel_file" "$member" | head -n1 | tr -d '[:space:]')"
+    fi
+fi
+if [[ -z "$KERNEL" || "$KERNEL" == "linux" ]]; then
+    KERNEL=linux
+    echo "warning: the XanMod kernel is not in the local repository; the ISO will use the stock Arch kernel." >&2
 fi
 echo "Kernel: $KERNEL"
 
@@ -89,18 +97,25 @@ trap 'rm -f "$COMBINED" "$REMOVE"' EXIT
 {
     echo "grml-zsh-config"                      # conflicts with the desktop's own .zshrc
     list "$REPO_DIR/packages/releng-remove.txt"
-    if [[ "$KERNEL" == "linux-xanmod" ]]; then echo "linux"; fi
+    if [[ "$KERNEL" != "linux" ]]; then echo "linux"; fi
 } > "$REMOVE"
 grep -vxFf "$REMOVE" "$COMBINED" > "$PROFILE/packages.x86_64" || true
 
-# --- kernel: boot entries and initramfs presets follow the kernel name
-if [[ "$KERNEL" == "linux-xanmod" ]]; then
+# --- kernel: boot entries and the live initramfs preset follow the kernel name
+if [[ "$KERNEL" != "linux" ]]; then
     rm -f "$AIROOT/etc/mkinitcpio.d/linux.preset"
+    mkdir -p "$AIROOT/etc/mkinitcpio.d"
+    cat > "$AIROOT/etc/mkinitcpio.d/$KERNEL.preset" <<PRESET
+PRESETS=('archiso')
+ALL_kver='/boot/vmlinuz-$KERNEL'
+archiso_config='/etc/mkinitcpio.conf.d/archiso.conf'
+archiso_image='/boot/initramfs-$KERNEL.img'
+PRESET
     for d in syslinux grub efiboot; do
         [[ -d "$PROFILE/$d" ]] || continue
         { grep -rlE 'vmlinuz-linux|initramfs-linux' "$PROFILE/$d" || true; } | xargs -r sed -i -E \
-            -e 's#vmlinuz-linux\b#vmlinuz-linux-xanmod#g' \
-            -e 's#initramfs-linux\.img#initramfs-linux-xanmod.img#g'
+            -e "s#vmlinuz-linux\\b#vmlinuz-$KERNEL#g" \
+            -e "s#initramfs-linux\\.img#initramfs-$KERNEL.img#g"
     done
 fi
 
@@ -127,16 +142,23 @@ if [[ -d "$DESKTOP_REPO/.git" ]]; then
     git -C "$SKEL/choutesos" remote set-url origin https://github.com/ChoutesOS/choutesos.git
 fi
 
-# --- installer
-mkdir -p "$AIROOT/usr/share/choutesos-installer" "$AIROOT/usr/bin" "$AIROOT/usr/share/applications"
+# --- installer, first-boot setup and the kiosk session that shows them (no desktop, no shortcuts)
+mkdir -p "$AIROOT/usr/share/choutesos-installer" "$AIROOT/usr/bin" "$AIROOT/usr/share/applications" \
+         "$AIROOT/usr/share/wayland-sessions" "$AIROOT/usr/lib/choutesos"
 cp -a "$INSTALLER_REPO/choutesos_installer" "$AIROOT/usr/share/choutesos-installer/"
-find "$AIROOT/usr/share/choutesos-installer" -name __pycache__ -prune -exec rm -rf {} \;
+find "$AIROOT/usr/share/choutesos-installer" \( -name __pycache__ -o -name tests \) -prune -exec rm -rf {} \;
 install -m 755 "$INSTALLER_REPO/bin/choutesos-installer" "$AIROOT/usr/bin/choutesos-installer"
-install -m 644 "$INSTALLER_REPO/data/choutesos-installer.desktop" "$AIROOT/usr/share/applications/"
+install -m 755 "$INSTALLER_REPO/bin/choutesos-session" "$AIROOT/usr/bin/choutesos-session"
+install -m 755 "$INSTALLER_REPO/bin/choutesos-oobe-helper" "$AIROOT/usr/lib/choutesos/oobe-helper"
+install -m 644 "$INSTALLER_REPO/data/choutesos-installer.desktop" "$AIROOT/usr/share/applications/choutesos-installer.desktop"
+install -m 644 "$INSTALLER_REPO/data/choutesos-installer.session.desktop" "$AIROOT/usr/share/wayland-sessions/choutesos-installer.desktop"
+install -m 644 "$INSTALLER_REPO/data/choutesos-setup.session.desktop" "$AIROOT/usr/share/wayland-sessions/choutesos-setup.desktop"
 
-# --- overlay files (os-release, live user, autologin, ...)
+# --- overlay files (os-release, live user, autologin into the installer, ...)
 cp -r "$REPO_DIR/overlay/airootfs/." "$AIROOT/"
 sed -i "s|__VERSION__|${VERSION}|g" "$AIROOT/etc/os-release"
+# older versions of this repository shipped a hook for the kernel preset; it is no longer needed
+rm -f "$AIROOT/etc/pacman.d/hooks/89-choutesos-archiso-preset.hook" "$AIROOT/usr/local/bin/choutesos-archiso-preset"
 
 # --- services in the live system: graphical login, network, bluetooth
 mkdir -p "$AIROOT/etc/systemd/system/multi-user.target.wants"
@@ -145,14 +167,14 @@ ln -sf /usr/lib/systemd/system/sddm.service "$AIROOT/etc/systemd/system/display-
 ln -sf /usr/lib/systemd/system/NetworkManager.service "$AIROOT/etc/systemd/system/multi-user.target.wants/NetworkManager.service"
 ln -sf /usr/lib/systemd/system/bluetooth.service "$AIROOT/etc/systemd/system/multi-user.target.wants/bluetooth.service"
 
-# --- UEFI boot of the live medium through GRUB with the ChoutesOS theme (opt-in: LIVE_GRUB=1)
-if [[ "${LIVE_GRUB:-0}" == "1" ]]; then
-    command -v grub-mkstandalone >/dev/null 2>&1 || { echo "LIVE_GRUB=1 needs the grub package on this computer." >&2; exit 1; }
-    sed -i "s/'uefi.systemd-boot'/'uefi.grub'/" "$PROFILE/profiledef.sh"
-    mkdir -p "$PROFILE/grub/themes"
-    cp -r "$REPO_DIR/overlay/airootfs/usr/share/grub/themes/choutesos" "$PROFILE/grub/themes/"
-    BLOCK="$(mktemp)"
-    cat > "$BLOCK" <<'THEME'
+# --- the ISO's boot menu: GRUB with the ChoutesOS theme (LIVE_GRUB=0 keeps the plain menu)
+if [[ "${LIVE_GRUB:-1}" != "0" ]]; then
+    if command -v grub-mkstandalone >/dev/null 2>&1; then
+        sed -i "s/'uefi.systemd-boot'/'uefi.grub'/" "$PROFILE/profiledef.sh"
+        mkdir -p "$PROFILE/grub/themes"
+        cp -r "$REPO_DIR/overlay/airootfs/usr/share/grub/themes/choutesos" "$PROFILE/grub/themes/"
+        BLOCK="$(mktemp)"
+        cat > "$BLOCK" <<'THEME'
 insmod all_video
 insmod gfxterm
 insmod png
@@ -163,14 +185,17 @@ terminal_output gfxterm
 set theme=/boot/grub/themes/choutesos/theme.txt
 export theme
 THEME
-    awk 'FNR==NR {b = b $0 "\n"; next} /^menuentry/ && !done {printf "%s", b; done=1} {print}' \
-        "$BLOCK" "$PROFILE/grub/grub.cfg" > "$PROFILE/grub/grub.cfg.new"
-    mv "$PROFILE/grub/grub.cfg.new" "$PROFILE/grub/grub.cfg"
-    rm -f "$BLOCK"
-    echo "Live boot menu: GRUB (themed)"
+        awk 'FNR==NR {b = b $0 "\n"; next} /^menuentry/ && !done {printf "%s", b; done=1} {print}' \
+            "$BLOCK" "$PROFILE/grub/grub.cfg" > "$PROFILE/grub/grub.cfg.new"
+        mv "$PROFILE/grub/grub.cfg.new" "$PROFILE/grub/grub.cfg"
+        rm -f "$BLOCK"
+        echo "Boot menu: GRUB (ChoutesOS theme)"
+    else
+        echo "note: the grub package is not installed on this computer, so the ISO keeps the plain boot menu." >&2
+    fi
 fi
 
 # --- file permissions
-sed -i '/^file_permissions=(/a\  ["/etc/sudoers.d/10-live"]="0:0:440"\n  ["/usr/bin/choutesos-installer"]="0:0:755"\n  ["/usr/local/bin/choutesos-archiso-preset"]="0:0:755"\n  ["/usr/lib/choutesos/face"]="0:0:755"\n  ["/usr/lib/choutesos/avatar"]="0:0:755"' "$PROFILE/profiledef.sh"
+sed -i '/^file_permissions=(/a\  ["/etc/sudoers.d/10-live"]="0:0:440"\n  ["/usr/bin/choutesos-installer"]="0:0:755"\n  ["/usr/bin/choutesos-session"]="0:0:755"\n  ["/usr/lib/choutesos/oobe-helper"]="0:0:755"\n  ["/usr/lib/choutesos/login-background"]="0:0:755"\n  ["/usr/lib/choutesos/face"]="0:0:755"\n  ["/usr/lib/choutesos/avatar"]="0:0:755"' "$PROFILE/profiledef.sh"
 
 echo "Profile generated at $PROFILE (version $VERSION)."

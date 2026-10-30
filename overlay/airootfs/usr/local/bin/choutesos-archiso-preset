@@ -1,8 +1,0 @@
-#!/bin/sh
-# Live medium only: gives the kernel the archiso initramfs preset (see the pacman hook next to it).
-cat > /etc/mkinitcpio.d/linux-xanmod.preset <<'PRESET'
-PRESETS=('archiso')
-ALL_kver='/boot/vmlinuz-linux-xanmod'
-archiso_config='/etc/mkinitcpio.conf.d/archiso.conf'
-archiso_image='/boot/initramfs-linux-xanmod.img'
-PRESET

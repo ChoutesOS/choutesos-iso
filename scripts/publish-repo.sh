@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Uploads repo/ to a GitHub release. packages.choutes.top redirects to that release,
+# Uploads repo/ to a GitHub release. packages.choutes.com redirects to that release,
 # so pacman downloads the packages from GitHub.
 set -euo pipefail
 
@@ -20,7 +20,7 @@ cp "$OUT/$NAME.files.tar.zst" "$STAGE/$NAME.files"
 if ! gh release view "$TAG" -R "$GH_REPO" >/dev/null 2>&1; then
     gh release create "$TAG" -R "$GH_REPO" --latest=false \
         --title "ChoutesOS package repository (x86_64)" \
-        --notes "Pacman repository served at https://packages.choutes.top/choutesos/x86_64/. Do not delete this release."
+        --notes "Pacman repository served at https://packages.choutes.com/choutesos/x86_64/. Do not delete this release."
 fi
 
 echo "Uploading $(ls "$STAGE" | wc -l) files..."
@@ -31,4 +31,4 @@ gh release view "$TAG" -R "$GH_REPO" --json assets --jq '.assets[].name' | while
     [[ -e "$STAGE/$asset" ]] || gh release delete-asset "$TAG" "$asset" -R "$GH_REPO" -y
 done
 
-echo "Published. Check: curl -I https://packages.choutes.top/choutesos/x86_64/$NAME.db"
+echo "Published. Check: curl -I https://packages.choutes.com/choutesos/x86_64/$NAME.db"
