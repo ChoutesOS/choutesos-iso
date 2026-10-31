@@ -38,3 +38,6 @@ xfsprogs
 efibootmgr
 os-prober
 grub
+pacman-contrib
+libnotify
+polkit
